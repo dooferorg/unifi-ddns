@@ -1,3 +1,5 @@
+// unifi-ddns - https://github.com/dooferorg/unifi-ddns/blob/main/src/index.js
+
 class BadRequestException extends Error {
 	constructor(reason) {
 		super(reason);
@@ -121,26 +123,29 @@ async function handleRequest(request) {
 	// ydns uses ?host=
 	const hostnameParam = params?.get("hostname") || params?.get("host") || params?.get("domains");
 	const hostnames = hostnameParam?.split(",");
+	if (params?.get("root") == "1") {
+		hostnames.push(username)
+	}
 
 	// fallback to connecting IP address
 	const ipsParam = params.get("ips") || params.get("ip") || params.get("myip") || request.headers.get("Cf-Connecting-Ip");
-   	const ips = ipsParam?.split(",");
+	const ips = ipsParam?.split(",");
 
 	if (!hostnames || hostnames.length === 0 || !ips || ips.length === 0) {
 	        throw new BadRequestException("You must specify both hostname(s) and IP address(es)");
 	}
 
 	// Iterate over each IP and update DNS records for all hostnames
-    	for (const ip of ips) {
+	for (const ip of ips) {
 		await informAPI(hostnames, ip.trim(), username, token);
-    	}
+	}
 	return new Response("good", {
-        	status: 200,
+		status: 200,
 		headers: {
-          	  	"Content-Type": "text/plain;charset=UTF-8",
-        	    	"Cache-Control": "no-store",
-        	},
-    	});
+			"Content-Type": "text/plain;charset=UTF-8",
+			"Cache-Control": "no-store",
+		},
+	});
 }
 
 async function informAPI(hostnames, ip, name, token) {
